@@ -35,6 +35,9 @@ SMLayerBackgroundGFX<RGB, optionFlags>::SMLayerBackgroundGFX(RGB * buffer, uint1
     backgroundColorCorrectionLUT = colorCorrectionLUT;
     this->matrixWidth = width;
     this->matrixHeight = height;
+#ifdef SM_WRITE_CALLBACK
+    writeCb = NULL;
+#endif
 }
 
 // call this when buffers should be sourced from malloc inside begin()
@@ -245,6 +248,12 @@ void SMLayerBackgroundGFX<RGB, optionFlags>::drawPixel(int16_t x, int16_t y, con
         hwy = (this->matrixHeight - 1) - x;
     }
 
+#ifdef SM_WRITE_CALLBACK
+if (writeCb != NULL) {
+    writeCb(wCbCtx, wCbCtxVal, (hwy * this->matrixWidth) + hwx, color);
+    return;
+}
+#endif
     loadPixelToDrawBuffer(hwx, hwy, color);
 }
 
@@ -269,6 +278,13 @@ void SMLayerBackgroundGFX<RGB, optionFlags>::drawHardwareHLine(uint16_t x0, uint
     int i;
 
     for (i = x0; i <= x1; i++) {
+#ifdef SM_WRITE_CALLBACK
+
+        if (writeCb != NULL) {
+            writeCb(wCbCtx, wCbCtxVal, (y * this->matrixWidth) + i, color);
+            continue;
+        }
+#endif
         loadPixelToDrawBuffer(i, y, color);
     }
 }
@@ -279,6 +295,13 @@ void SMLayerBackgroundGFX<RGB, optionFlags>::drawHardwareVLine(uint16_t x, uint1
     int i;
 
     for (i = y0; i <= y1; i++) {
+#ifdef SM_WRITE_CALLBACK
+
+        if (writeCb != NULL) {
+            writeCb(wCbCtx, wCbCtxVal, (i * this->matrixWidth) + x, color);
+            continue;
+        }
+#endif
         loadPixelToDrawBuffer(x, i, color);
     }
 }
@@ -415,6 +438,20 @@ template<typename RGB, unsigned int optionFlags>
 RGB *SMLayerBackgroundGFX<RGB, optionFlags>::getRealBackBuffer() {
   return backgroundBuffers[currentDrawBuffer];
 }
+
+#ifdef SM_WRITE_CALLBACK
+template<typename RGB, unsigned int optionFlags>
+void SMLayerBackgroundGFX<RGB, optionFlags>::registerWriteCallback(void* ctx, uint16_t ctxVal, void (*WriteCb)(void *ctx, uint16_t ctxVal, uint16_t pixNum, const RGB& color)) {
+    writeCb = WriteCb;
+    wCbCtx = ctx;
+    wCbCtxVal = ctxVal;
+}
+
+template<typename RGB, unsigned int optionFlags>
+void SMLayerBackgroundGFX<RGB, optionFlags>::unregisterWriteCallback() {
+    writeCb = NULL;
+}
+#endif
 
 /* Shared */
 

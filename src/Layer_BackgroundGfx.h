@@ -31,10 +31,14 @@
 // Adafruit_GFX includes
 #include "MatrixGfxFontCommon.h"
 
+#define SM_WRITE_CALLBACK
+
 #define SM_BACKGROUND_GFX_OPTIONS_NONE     0
 
 #define SM_BACKGROUND_GFX_BACKWARDS_COMPATIBILITY
 //#define SM_BACKGROUND_GFX_OLD_DRAWING_FUNCTIONS
+
+
 
 template <typename RGB, unsigned int optionFlags>
 class SMLayerBackgroundGFX : public SM_Layer, public Adafruit_GFX {
@@ -71,6 +75,12 @@ class SMLayerBackgroundGFX : public SM_Layer, public Adafruit_GFX {
         RGB *backBuffer(void);
         void setBackBuffer(RGB *newBuffer);
         RGB *getRealBackBuffer();
+
+#ifdef SM_WRITE_CALLBACK
+        void registerWriteCallback(void* ctx, uint16_t ctxVal,
+                        void (*WriteCb)(void *ctx, uint16_t ctxVal, uint16_t pixNum, const RGB& color));
+        void unregisterWriteCallback();
+#endif
 
         /* Shared */
         void setBrightnessShifts(int numShifts);
@@ -150,6 +160,12 @@ class SMLayerBackgroundGFX : public SM_Layer, public Adafruit_GFX {
         void bresteepline(int16_t x3, int16_t y3, int16_t x4, int16_t y4, const RGB& color);
         void fillFlatSideTriangleInt(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3, const RGB& color);
         bitmap_font *font;
+#endif
+
+#ifdef SM_WRITE_CALLBACK
+        void (*writeCb)(void *ctx, uint16_t ctxVal, uint16_t pixNum, const RGB& color);
+        void *wCbCtx;
+        uint16_t wCbCtxVal;
 #endif
 
         uint8_t backgroundBrightness = 255;
